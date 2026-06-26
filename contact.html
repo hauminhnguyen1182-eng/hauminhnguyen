@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liên hệ | hauminhnguyen</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <a href="/" class="logo">hauminhnguyen</a>
+                <ul class="nav-links">
+                    <li><a href="/">Trang chủ</a></li>
+                    <li><a href="/blog/">Blog</a></li>
+                    <li><a href="/contact.html">Liên hệ</a></li>
+                    <li><a href="https://github.com/hauminhnguyen1182-eng">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container">
+            <h1 class="section-title">Liên hệ</h1>
+            
+            <div class="form-container">
+                <form action="https://formspree.io/f/xkolrzwp" method="POST" id="contactForm">
+                    <div class="form-group">
+                        <label for="name">Họ và tên</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="subject">Chủ đề</label>
+                        <input type="text" id="subject" name="subject" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Nội dung</label>
+                        <textarea id="message" name="message" required></textarea>
+                    </div>
+                    <button type="submit" class="btn-submit">Gửi tin nhắn</button>
+                </form>
+                
+                <div class="form-success" id="successMessage">
+                    <h3>✅ Gửi thành công!</h3>
+                    <p>Cảm ơn bạn đã liên hệ. Tôi sẽ phản hồi trong thời gian sớm nhất.</p>
+                    <a href="/" class="btn btn-primary" style="margin-top: 1rem;">Về trang chủ</a>
+                </div>
+            </div>
+
+            <div style="max-width: 600px; margin: 2rem auto 0; text-align: center;">
+                <p><strong>Liên hệ nhanh:</strong></p>
+                <p>📧 <a href="mailto:hauminhnguyen1182@gmail.com">hauminhnguyen1182@gmail.com</a></p>
+                <p>🐙 <a href="https://github.com/hauminhnguyen1182-eng">GitHub Profile</a></p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 hauminhnguyen. Tất cả quyền được bảo lưu.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var form = this;
+            var successMsg = document.getElementById('successMessage');
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { 'Accept': 'application/json' }
+            }).then(function(response) {
+                if (response.ok) {
+                    form.style.display = 'none';
+                    successMsg.style.display = 'block';
+                }
+            }).catch(function(error) {
+                alert('Có lỗi xảy ra. Vui lòng thử lại.');
+            });
+        });
+    </script>
+</body>
+</html>
