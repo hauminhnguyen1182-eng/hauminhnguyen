@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 from doc_reader import DocReader
 from doc_writer import DocWriter
 from ai_engine import AIEngine
@@ -6,6 +7,7 @@ import os
 import uuid
 
 app = Flask(__name__)
+CORS(app)
 UPLOAD_FOLDER = "/workspace/uploads"
 GENERATED_FOLDER = "/workspace/generated"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
