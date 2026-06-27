@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Document Assistant | hauminhnguyen</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .chatbot-container { max-width: 800px; margin: 2rem auto; padding: 0 20px; }
+        .chat-box { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .upload-zone { border: 2px dashed #667eea; border-radius: 12px; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .upload-zone:hover { background: #f8f9ff; border-color: #5a6fd6; }
+        .upload-zone.dragover { background: #e8f0ff; border-color: #0078d7; }
+        .file-input { display: none; }
+        .task-buttons { display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
+        .task-btn { padding: 10px 20px; border: 2px solid #667eea; background: white; color: #667eea; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .task-btn:hover, .task-btn.active { background: #667eea; color: white; }
+        .output-buttons { display: flex; gap: 1rem; margin: 1rem 0; }
+        .output-btn { padding: 10px 20px; background: #0078d7; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .output-btn:hover { background: #005a9e; }
+        .result-box { margin-top: 1rem; padding: 1rem; background: #f5f7fa; border-radius: 8px; display: none; }
+        .preview-text { max-height: 300px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; }
+        .download-link { display: inline-block; margin-top: 1rem; padding: 12px 24px; background: #28a745; color: white; text-decoration: none; border-radius: 8px; }
+        .download-link:hover { background: #218838; }
+        .loading { display: none; text-align: center; padding: 2rem; }
+        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <a href="/" class="logo">hauminhnguyen</a>
+                <ul class="nav-links">
+                    <li><a href="/">Trang chủ</a></li>
+                    <li><a href="/blog/">Blog</a></li>
+                    <li><a href="/chatbot.html">AI Assistant</a></li>
+                    <li><a href="/contact.html">Liên hệ</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="chatbot-container">
+            <h1 class="section-title">AI Document Assistant</h1>
+            <p style="text-align: center; color: #666; margin-bottom: 2rem;">Tải file lên và để AI soạn thảo văn bản cho bạn</p>
+
+            <div class="chat-box">
+                <div class="upload-zone" id="uploadZone">
+                    <p>📁 Kéo thả file vào đây hoặc click để chọn</p>
+                    <p style="color: #999; font-size: 0.9rem;">Hỗ trợ: Word (.docx), Excel (.xlsx), PowerPoint (.pptx)</p>
+                    <input type="file" id="fileInput" class="file-input" accept=".docx,.xlsx,.pptx">
+                </div>
+
+                <div id="fileInfo" style="display: none; margin: 1rem 0; padding: 1rem; background: #e8f5e9; border-radius: 8px;">
+                    <strong>📄 File đã chọn:</strong> <span id="fileName"></span>
+                </div>
+
+                <div id="taskSection" style="display: none;">
+                    <h3>Chọn tác vụ:</h3>
+                    <div class="task-buttons">
+                        <button class="task-btn active" data-task="summarize">📝 Tóm tắt</button>
+                        <button class="task-btn" data-task="draft">📋 Soạn thảo</button>
+                        <button class="task-btn" data-task="rewrite">✍️ Viết lại</button>
+                    </div>
+
+                    <h3>Chọn định dạng output:</h3>
+                    <div class="output-buttons">
+                        <button class="output-btn" data-type="docx">📄 Word</button>
+                        <button class="output-btn" data-type="pptx">📊 PowerPoint</button>
+                        <button class="output-btn" data-type="xlsx">📈 Excel</button>
+                    </div>
+                </div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>AI đang xử lý...</p>
+                </div>
+
+                <div class="result-box" id="resultBox">
+                    <h3>Kết quả:</h3>
+                    <div class="preview-text" id="previewText"></div>
+                    <a class="download-link" id="downloadLink" href="#" download>⬇️ Tải file</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const API_BASE = "http://localhost:5000";
+        let currentFileId = null;
+        let selectedTask = "summarize";
+        let selectedType = "docx";
+
+        const uploadZone = document.getElementById("uploadZone");
+        const fileInput = document.getElementById("fileInput");
+        const fileInfo = document.getElementById("fileInfo");
+        const fileName = document.getElementById("fileName");
+        const taskSection = document.getElementById("taskSection");
+        const loading = document.getElementById("loading");
+        const resultBox = document.getElementById("resultBox");
+        const previewText = document.getElementById("previewText");
+        const downloadLink = document.getElementById("downloadLink");
+
+        uploadZone.addEventListener("click", () => fileInput.click());
+        uploadZone.addEventListener("dragover", (e) => { e.preventDefault(); uploadZone.classList.add("dragover"); });
+        uploadZone.addEventListener("dragleave", () => uploadZone.classList.remove("dragover"));
+        uploadZone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove("dragover");
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener("change", (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+        document.querySelectorAll(".task-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".task-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                selectedTask = btn.dataset.task;
+            });
+        });
+
+        document.querySelectorAll(".output-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                selectedType = btn.dataset.type;
+                generateDocument();
+            });
+        });
+
+        async function handleFile(file) {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            loading.style.display = "block";
+            taskSection.style.display = "none";
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/upload`, { method: "POST", body: formData });
+                const data = await resp.json();
+
+                currentFileId = data.file_id;
+                fileName.textContent = data.filename;
+                fileInfo.style.display = "block";
+                taskSection.style.display = "block";
+            } catch (err) {
+                alert("Upload failed: " + err.message);
+            } finally {
+                loading.style.display = "none";
+            }
+        }
+
+        async function generateDocument() {
+            if (!currentFileId) return;
+
+            loading.style.display = "block";
+            resultBox.style.display = "none";
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/generate`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ file_id: currentFileId, task: selectedTask, output_type: selectedType })
+                });
+                const data = await resp.json();
+
+                downloadLink.href = `${API_BASE}${data.download_url}`;
+                downloadLink.download = `output.${selectedType}`;
+                resultBox.style.display = "block";
+            } catch (err) {
+                alert("Generation failed: " + err.message);
+            } finally {
+                loading.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>
