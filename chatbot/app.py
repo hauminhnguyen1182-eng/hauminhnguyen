@@ -36,13 +36,15 @@ def upload_file():
     file.save(file_path)
 
     content = reader.read(file_path)
+    template = reader.read_template(file_path)
 
     return jsonify({
         "file_id": file_id,
         "filename": file.filename,
         "type": content["type"],
         "content_preview": content["content"][:500],
-        "metadata": content["metadata"]
+        "metadata": content["metadata"],
+        "template": template
     })
 
 @app.route("/api/generate", methods=["POST"])
@@ -51,6 +53,8 @@ def generate_document():
     file_id = data.get("file_id")
     task = data.get("task", "summarize")
     output_type = data.get("output_type", "docx")
+    user_input = data.get("user_input", "")
+    title = data.get("title", "Generated Document")
 
     upload_files = [f for f in os.listdir(UPLOAD_FOLDER) if f.startswith(file_id)]
     if not upload_files:
@@ -58,21 +62,24 @@ def generate_document():
 
     file_path = os.path.join(UPLOAD_FOLDER, upload_files[0])
     content = reader.read(file_path)
-    generated = ai.generate(content["content"], task)
+    template = reader.read_template(file_path)
+
+    generated = ai.generate(content["content"], task, template, user_input)
 
     output_path = os.path.join(GENERATED_FOLDER, f"{file_id}.{output_type}")
 
     if output_type == "docx":
-        writer.create_word(generated, output_path, title=data.get("title", "Generated Document"))
+        writer.create_word(generated, output_path, title=title)
     elif output_type == "pptx":
-        writer.create_pptx(generated, output_path, title=data.get("title", "Presentation"))
+        writer.create_pptx(generated, output_path, title=title)
     elif output_type == "xlsx":
         writer.create_excel(generated, output_path)
 
     return jsonify({
         "file_id": file_id,
         "output_type": output_type,
-        "download_url": f"/api/download/{file_id}"
+        "download_url": f"/api/download/{file_id}",
+        "preview": generated[:500]
     })
 
 @app.route("/api/download/<file_id>", methods=["GET"])

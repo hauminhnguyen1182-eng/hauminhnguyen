@@ -6,25 +6,37 @@
     <title>AI Document Assistant | hauminhnguyen</title>
     <link rel="stylesheet" href="/style.css">
     <style>
-        .chatbot-container { max-width: 800px; margin: 2rem auto; padding: 0 20px; }
+        .chatbot-container { max-width: 900px; margin: 2rem auto; padding: 0 20px; }
         .chat-box { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .upload-zone { border: 2px dashed #667eea; border-radius: 12px; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.3s; }
         .upload-zone:hover { background: #f8f9ff; border-color: #5a6fd6; }
         .upload-zone.dragover { background: #e8f0ff; border-color: #0078d7; }
         .file-input { display: none; }
-        .task-buttons { display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
-        .task-btn { padding: 10px 20px; border: 2px solid #667eea; background: white; color: #667eea; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .section { margin: 1.5rem 0; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; }
+        .section h3 { margin-bottom: 1rem; color: #333; }
+        .task-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .task-btn { padding: 12px 24px; border: 2px solid #667eea; background: white; color: #667eea; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
         .task-btn:hover, .task-btn.active { background: #667eea; color: white; }
-        .output-buttons { display: flex; gap: 1rem; margin: 1rem 0; }
-        .output-btn { padding: 10px 20px; background: #0078d7; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .output-buttons { display: flex; gap: 1rem; }
+        .output-btn { padding: 12px 24px; background: #0078d7; color: white; border: none; border-radius: 8px; cursor: pointer; }
         .output-btn:hover { background: #005a9e; }
-        .result-box { margin-top: 1rem; padding: 1rem; background: #f5f7fa; border-radius: 8px; display: none; }
-        .preview-text { max-height: 300px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; }
+        .input-group { margin: 1rem 0; }
+        .input-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        .input-group textarea { width: 100%; min-height: 150px; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; resize: vertical; }
+        .input-group input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+        .template-info { background: #e3f2fd; padding: 1rem; border-radius: 8px; margin: 1rem 0; }
+        .template-info h4 { margin-bottom: 0.5rem; color: #1976d2; }
+        .template-info ul { margin: 0; padding-left: 1.5rem; }
+        .template-info li { margin: 0.3rem 0; }
+        .result-box { margin-top: 1.5rem; padding: 1.5rem; background: #f5f7fa; border-radius: 8px; display: none; }
+        .preview-text { max-height: 300px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; background: white; padding: 1rem; border-radius: 8px; border: 1px solid #ddd; }
         .download-link { display: inline-block; margin-top: 1rem; padding: 12px 24px; background: #28a745; color: white; text-decoration: none; border-radius: 8px; }
         .download-link:hover { background: #218838; }
         .loading { display: none; text-align: center; padding: 2rem; }
         .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .placeholder-list { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+        .placeholder-tag { background: #fff3cd; padding: 4px 8px; border-radius: 4px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -35,7 +47,7 @@
                 <ul class="nav-links">
                     <li><a href="/">Trang chủ</a></li>
                     <li><a href="/blog/">Blog</a></li>
-                    <li><a href="/chatbot.html">AI Assistant</a></li>
+                    <li><a href="/chatbot">AI Assistant</a></li>
                     <li><a href="/contact.html">Liên hệ</a></li>
                 </ul>
             </nav>
@@ -45,28 +57,55 @@
     <section class="section">
         <div class="chatbot-container">
             <h1 class="section-title">AI Document Assistant</h1>
-            <p style="text-align: center; color: #666; margin-bottom: 2rem;">Tải file lên và để AI soạn thảo văn bản cho bạn</p>
+            <p style="text-align: center; color: #666; margin-bottom: 2rem;">Tải file mẫu lên → Nhập nội dung → AI soạn thảo chuyên nghiệp</p>
 
             <div class="chat-box">
-                <div class="upload-zone" id="uploadZone">
-                    <p>📁 Kéo thả file vào đây hoặc click để chọn</p>
-                    <p style="color: #999; font-size: 0.9rem;">Hỗ trợ: Word (.docx), Excel (.xlsx), PowerPoint (.pptx)</p>
-                    <input type="file" id="fileInput" class="file-input" accept=".docx,.xlsx,.pptx">
+                <!-- Step 1: Upload -->
+                <div class="section">
+                    <h3>📁 Bước 1: Tải file mẫu lên</h3>
+                    <div class="upload-zone" id="uploadZone">
+                        <p>Kéo thả file vào đây hoặc click để chọn</p>
+                        <p style="color: #999; font-size: 0.9rem;">Hỗ trợ: Word (.docx), PowerPoint (.pptx)</p>
+                        <input type="file" id="fileInput" class="file-input" accept=".docx,.pptx">
+                    </div>
+                    <div id="fileInfo" style="display: none; margin-top: 1rem; padding: 1rem; background: #e8f5e9; border-radius: 8px;">
+                        <strong>📄 File đã chọn:</strong> <span id="fileName"></span>
+                    </div>
                 </div>
 
-                <div id="fileInfo" style="display: none; margin: 1rem 0; padding: 1rem; background: #e8f5e9; border-radius: 8px;">
-                    <strong>📄 File đã chọn:</strong> <span id="fileName"></span>
+                <!-- Template Info -->
+                <div id="templateInfo" class="template-info" style="display: none;">
+                    <h4>📋 Cấu trúc mẫu được nhận diện:</h4>
+                    <ul id="templateStructure"></ul>
+                    <div id="placeholderSection" style="display: none; margin-top: 1rem;">
+                        <strong>Các vị trí cần điền:</strong>
+                        <div class="placeholder-list" id="placeholderList"></div>
+                    </div>
                 </div>
 
-                <div id="taskSection" style="display: none;">
-                    <h3>Chọn tác vụ:</h3>
+                <!-- Step 2: User Input -->
+                <div id="inputSection" class="section" style="display: none;">
+                    <h3>✏️ Bước 2: Nhập nội dung bạn muốn soạn thảo</h3>
+                    <div class="input-group">
+                        <label for="userInput">Nội dung thô (ý tưởng, thông tin cần viết):</label>
+                        <textarea id="userInput" placeholder="Ví dụ: Công ty ABC cần tuyển 5 lập trình viên PHP, mức lương 20-30 triệu, làm việc tại Hà Nội..."></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label for="docTitle">Tiêu đề văn bản:</label>
+                        <input type="text" id="docTitle" placeholder="Ví dụ: Tuyển dụng lập trình viên">
+                    </div>
+                </div>
+
+                <!-- Step 3: Task Selection -->
+                <div id="taskSection" class="section" style="display: none;">
+                    <h3>⚙️ Bước 3: Chọn kiểu xử lý</h3>
                     <div class="task-buttons">
-                        <button class="task-btn active" data-task="summarize">📝 Tóm tắt</button>
-                        <button class="task-btn" data-task="draft">📋 Soạn thảo</button>
-                        <button class="task-btn" data-task="rewrite">✍️ Viết lại</button>
+                        <button class="task-btn active" data-task="fill_template">📝 Điền mẫu + Viết lại</button>
+                        <button class="task-btn" data-task="draft_from_template">📋 Soạn theo mẫu</button>
+                        <button class="task-btn" data-task="rewrite">✍️ Viết lại chuyên nghiệp</button>
                     </div>
 
-                    <h3>Chọn định dạng output:</h3>
+                    <h3 style="margin-top: 1rem;">📄 Định dạng output:</h3>
                     <div class="output-buttons">
                         <button class="output-btn" data-type="docx">📄 Word</button>
                         <button class="output-btn" data-type="pptx">📊 PowerPoint</button>
@@ -80,7 +119,7 @@
                 </div>
 
                 <div class="result-box" id="resultBox">
-                    <h3>Kết quả:</h3>
+                    <h3>✅ Kết quả:</h3>
                     <div class="preview-text" id="previewText"></div>
                     <a class="download-link" id="downloadLink" href="#" download>⬇️ Tải file</a>
                 </div>
@@ -91,13 +130,19 @@
     <script>
         const API_BASE = "https://effort-organisations-focusing-rod.trycloudflare.com";
         let currentFileId = null;
-        let selectedTask = "summarize";
+        let selectedTask = "fill_template";
         let selectedType = "docx";
+        let templateData = null;
 
         const uploadZone = document.getElementById("uploadZone");
         const fileInput = document.getElementById("fileInput");
         const fileInfo = document.getElementById("fileInfo");
         const fileName = document.getElementById("fileName");
+        const templateInfo = document.getElementById("templateInfo");
+        const templateStructure = document.getElementById("templateStructure");
+        const placeholderSection = document.getElementById("placeholderSection");
+        const placeholderList = document.getElementById("placeholderList");
+        const inputSection = document.getElementById("inputSection");
         const taskSection = document.getElementById("taskSection");
         const loading = document.getElementById("loading");
         const resultBox = document.getElementById("resultBox");
@@ -135,6 +180,8 @@
 
             loading.style.display = "block";
             taskSection.style.display = "none";
+            inputSection.style.display = "none";
+            templateInfo.style.display = "none";
 
             try {
                 const resp = await fetch(`${API_BASE}/api/upload`, { method: "POST", body: formData });
@@ -143,6 +190,34 @@
                 currentFileId = data.file_id;
                 fileName.textContent = data.filename;
                 fileInfo.style.display = "block";
+
+                // Show template info
+                if (data.template && data.template.structure && data.template.structure.length > 0) {
+                    templateData = data.template;
+                    templateStructure.innerHTML = "";
+
+                    data.template.structure.slice(0, 10).forEach(s => {
+                        const li = document.createElement("li");
+                        li.textContent = s.text.substring(0, 100) + (s.text.length > 100 ? "..." : "");
+                        if (s.is_heading) li.style.fontWeight = "bold";
+                        templateStructure.appendChild(li);
+                    });
+
+                    if (data.template.placeholders && data.template.placeholders.length > 0) {
+                        placeholderList.innerHTML = "";
+                        data.template.placeholders.forEach(p => {
+                            const span = document.createElement("span");
+                            span.className = "placeholder-tag";
+                            span.textContent = `[${p}]`;
+                            placeholderList.appendChild(span);
+                        });
+                        placeholderSection.style.display = "block";
+                    }
+
+                    templateInfo.style.display = "block";
+                }
+
+                inputSection.style.display = "block";
                 taskSection.style.display = "block";
             } catch (err) {
                 alert("Upload failed: " + err.message);
@@ -154,6 +229,9 @@
         async function generateDocument() {
             if (!currentFileId) return;
 
+            const userInput = document.getElementById("userInput").value;
+            const docTitle = document.getElementById("docTitle").value || "Generated Document";
+
             loading.style.display = "block";
             resultBox.style.display = "none";
 
@@ -161,12 +239,21 @@
                 const resp = await fetch(`${API_BASE}/api/generate`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ file_id: currentFileId, task: selectedTask, output_type: selectedType })
+                    body: JSON.stringify({
+                        file_id: currentFileId,
+                        task: selectedTask,
+                        output_type: selectedType,
+                        user_input: userInput,
+                        title: docTitle
+                    })
                 });
                 const data = await resp.json();
 
+                if (data.preview) {
+                    previewText.textContent = data.preview;
+                }
                 downloadLink.href = `${API_BASE}${data.download_url}`;
-                downloadLink.download = `output.${selectedType}`;
+                downloadLink.download = `${docTitle}.${selectedType}`;
                 resultBox.style.display = "block";
             } catch (err) {
                 alert("Generation failed: " + err.message);
